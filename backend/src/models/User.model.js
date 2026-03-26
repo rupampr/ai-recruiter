@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        minlength: 8
+        minlength: 5
     },
     role: {
         type: String,
@@ -29,30 +29,25 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
-    try {
-        const salt = await bcrypt.genSalt(10);
-        this.password = await bcrypt.hash(this.password, salt);
-        return next();
-    } catch (err) {
-        return next(err);
-    }
+userSchema.pre('save', async function () {
+    if (!this.isModified("password")) return;
+
+    this.password = await bcrypt.hash(this.password, 10);
 });
 
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
+    return await bcrypt.compare(candidatePassword, this.password);
 };
 
 
-userSchema.methods.generateJWT = function () {
-    return jwt.sign(
-        { id: this._id, role: this.role },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN }
-    );
-};
+// userSchema.methods.generateJWT = function () {
+//     return jwt.sign(
+//         { id: this._id, role: this.role },
+//         process.env.JWT_SECRET,
+//         { expiresIn: process.env.JWT_EXPIRES_IN }
+//     );
+// };
 
 
 export const User = mongoose.model("User", userSchema);
